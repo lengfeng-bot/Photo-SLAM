@@ -33,25 +33,28 @@ class Camera
 public:
     Camera() {}
 
-    Camera (
+    Camera(
         camera_id_t camera_id,
         std::size_t width,
         std::size_t height,
         std::vector<double> params,
         int model_id = 0,
-        bool prior_focal_length = true)
+        bool prior_focal_length = true) // 表示是否有关于摄像机焦距的先验知识。如果为true，则在摄像机校正或3D重建时，会使用这个先验知识。
         : camera_id_(camera_id),
           width_(width),
           height_(height),
           params_(params),
           model_id_(model_id),
           prior_focal_length_(prior_focal_length)
-    {}
+    {
+    }
 
-    enum CameraModelType{
+    enum CameraModelType
+    {
         INVALID = 0,
         PINHOLE = 1,
-        FISHEYE = 2};
+        FISHEYE = 2
+    };
 
 public:
     inline void setModelId(const CameraModelType model_id)
@@ -82,18 +85,19 @@ public:
             cv::Size(this->width_, this->height_),
             CV_32F,
             undistort_map1,
-            undistort_map2
-        );
+            undistort_map2);
 
         cv::Mat white(old_size, CV_32FC3, cv::Vec3f(1.0f, 1.0f, 1.0f));
         undistortImage(white, undistort_mask);
 
-        if (do_gaus_pyramid_training) {
+        if (do_gaus_pyramid_training)
+        {
             assert(!gaus_pyramid_height_.empty() && !gaus_pyramid_width_.empty());
             cv::cuda::GpuMat undistort_mask_gpu;
             undistort_mask_gpu.upload(undistort_mask);
             gaus_pyramid_undistort_mask_.resize(num_gaus_pyramid_sub_levels_);
-            for (int l = 0; l < num_gaus_pyramid_sub_levels_; ++l) {
+            for (int l = 0; l < num_gaus_pyramid_sub_levels_; ++l)
+            {
                 cv::cuda::GpuMat undistort_mask_gpu_resized;
                 cv::cuda::resize(undistort_mask_gpu, undistort_mask_gpu_resized,
                                  cv::Size(gaus_pyramid_width_[l], gaus_pyramid_height_[l]));
@@ -110,8 +114,7 @@ public:
             dst,
             undistort_map1,
             undistort_map2,
-            cv::InterpolationFlags::INTER_LINEAR
-        );
+            cv::InterpolationFlags::INTER_LINEAR);
     }
 
 public:

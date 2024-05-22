@@ -3,11 +3,11 @@
  * GRAPHDECO research group, https://team.inria.fr/graphdeco
  * All rights reserved.
  *
- * This software is free for non-commercial, research and evaluation use 
+ * This software is free for non-commercial, research and evaluation use
  * under the terms of the LICENSE.md file.
  *
  * For inquiries contact  george.drettakis@inria.fr
- * 
+ *
  * This file is Derivative Works of Gaussian Splatting,
  * created by Longwei Li, Huajian Huang, Hui Cheng and Sai-Kit Yeung in 2023,
  * as part of Photo-SLAM.
@@ -16,8 +16,8 @@
 #include "include/gaussian_renderer.h"
 
 /**
- * @brief 
- * 
+ * @brief
+ *
  * @return std::tuple<render, viewspace_points, visibility_filter, radii>, which are all `torch::Tensor`
  */
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
@@ -26,24 +26,26 @@ GaussianRenderer::render(
     int image_height,
     int image_width,
     std::shared_ptr<GaussianModel> pc,
-    GaussianPipelineParams& pipe,
-    torch::Tensor& bg_color,
-    torch::Tensor& override_color,
+    GaussianPipelineParams &pipe,
+    torch::Tensor &bg_color,
+    torch::Tensor &override_color,
     float scaling_modifier,
     bool use_override_color)
 {
-    /* Render the scene. 
+    /* Render the scene.
 
        Background tensor (bg_color) must be on GPU!
      */
 
     // Create zero tensor. We will use it to make pytorch return gradients of the 2D (screen-space) means
     auto screenspace_points = torch::zeros_like(pc->getXYZ(),
-        torch::TensorOptions().dtype(pc->getXYZ().dtype()).requires_grad(true).device(torch::kCUDA));
-    try {
+                                                torch::TensorOptions().dtype(pc->getXYZ().dtype()).requires_grad(true).device(torch::kCUDA));
+    try
+    {
         screenspace_points.retain_grad();
     }
-    catch (const std::exception& e) {
+    catch (const std::exception &e)
+    {
         ; // pass
     }
 
@@ -62,8 +64,7 @@ GaussianRenderer::render(
         viewpoint_camera->full_proj_transform_,
         pc->active_sh_degree_,
         viewpoint_camera->camera_center_,
-        false
-    );
+        false);
 
     GaussianRasterizer rasterizer(raster_settings);
 
@@ -72,19 +73,21 @@ GaussianRenderer::render(
     auto opacity = pc->getOpacityActivation();
 
     /* If precomputed 3d covariance is provided, use it. If not, then it will be computed from
-       scaling / rotation by the rasterizer. 
+       scaling / rotation by the rasterizer.
      */
     bool has_scales = false,
          has_rotations = false,
          has_cov3D_precomp = false;
     torch::Tensor scales,
-                  rotations,
-                  cov3D_precomp;
-    if (pipe.compute_cov3D_) {
+        rotations,
+        cov3D_precomp;
+    if (pipe.compute_cov3D_)
+    {
         cov3D_precomp = pc->getCovarianceActivation();
         has_cov3D_precomp = true;
     }
-    else {
+    else
+    {
         scales = pc->getScalingActivation();
         rotations = pc->getRotationActivation();
         has_scales = true;
@@ -97,28 +100,37 @@ GaussianRenderer::render(
     bool has_shs = false,
          has_color_precomp = false;
     torch::Tensor shs,
-                  colors_precomp;
-    if (use_override_color) {
+        colors_precomp;
+    if (use_override_color)
+    {
         colors_precomp = override_color;
         has_color_precomp = true;
     }
-    else {
-        if (pipe.convert_SHs_) {
+    else
+    {
+        if (pipe.convert_SHs_)
+        {
             int max_sh_degree = pc->max_sh_degree_ + 1;
+            // 将SH特征的形状调整为（batch_size *num_points，3，(max_sh_degree + 1) * *2）。
             torch::Tensor shs_view = pc->getFeatures().transpose(1, 2).view({-1, 3, max_sh_degree * max_sh_degree});
+            // 计算相机中心到每个点的方向向量，并归一化。
             torch::Tensor dir_pp = (pc->getXYZ() - viewpoint_camera->camera_center_.repeat({pc->getFeatures().size(0), 1}));
+            // 计算相机中心到每个点的方向向量，并归一化。
             auto dir_pp_normalized = dir_pp / torch::frobenius_norm(dir_pp, /*dim=*/{1}, /*keepdim=*/true);
+            // 使用SH特征将方向向量转换为RGB颜色。
             auto sh2rgb = sh_utils::eval_sh(pc->active_sh_degree_, shs_view, dir_pp_normalized);
+            // 将RGB颜色的范围限制在0到1之间。
             colors_precomp = torch::clamp_min(sh2rgb + 0.5, 0.0);
             has_color_precomp = true;
         }
-        else {
+        else
+        {
             shs = pc->getFeatures();
             has_shs = true;
         }
     }
 
-    // Rasterize visible Gaussians to image, obtain their radii (on screen). 
+    // Rasterize visible Gaussians to image, obtain their radii (on screen).
     auto rasterizer_result = rasterizer.forward(
         means3D,
         means2D,
@@ -132,8 +144,7 @@ GaussianRenderer::render(
         colors_precomp,
         scales,
         rotations,
-        cov3D_precomp
-    );
+        cov3D_precomp);
     auto rendered_image = std::get<0>(rasterizer_result);
     auto radii = std::get<1>(rasterizer_result);
 

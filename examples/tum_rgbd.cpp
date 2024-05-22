@@ -41,6 +41,8 @@ void saveGpuPeakMemoryUsage(std::filesystem::path pathSave);
 
 int main(int argc, char **argv)
 {
+
+    // 检查参数数量是否正确，若不为7也不为8，则输出提示信息
     if (argc != 7 && argc != 8)
     {
         std::cerr << std::endl
@@ -53,12 +55,14 @@ int main(int argc, char **argv)
                   << " path_to_trajectory_output_directory/" /*6*/
                   << " (optional)no_viewer"                  /*7*/
                   << std::endl;
-        return 1;
+        return 1; // 如果命令行参数数量不正确，程序返回值设为 1
     }
     bool use_viewer = true;
+    // 若命令行参数数量为8，则判断第8个参数是否为 no_viewer，若是则不使用 viewer。
     if (argc == 8)
         use_viewer = (std::string(argv[7]) == "no_viewer" ? false : true);
 
+    // 创建输出目录
     std::string output_directory = std::string(argv[6]);
     if (output_directory.back() != '/')
         output_directory += "/";
@@ -72,15 +76,18 @@ int main(int argc, char **argv)
     LoadImages(strAssociationFilename, vstrImageFilenamesRGB, vstrImageFilenamesD, vTimestamps);
 
     // Check consistency in the number of images and depthmaps
+    // 检查RGB图和深度图数量是否一致
     int nImages = vstrImageFilenamesRGB.size();
     if (vstrImageFilenamesRGB.empty())
     {
-        std::cerr << std::endl << "No images found in provided path." << std::endl;
+        std::cerr << std::endl
+                  << "No images found in provided path." << std::endl;
         return 1;
     }
     else if (vstrImageFilenamesD.size() != vstrImageFilenamesRGB.size())
     {
-        std::cerr << std::endl << "Different number of images for rgb and depth." << std::endl;
+        std::cerr << std::endl
+                  << "Different number of images for rgb and depth." << std::endl;
         return 1;
     }
 
@@ -98,6 +105,7 @@ int main(int argc, char **argv)
     }
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
+    // 用C++中的智能指针 std::shared_ptr 创建了一个指向 ORB_SLAM3::System 类型对象的共享指针 pSLAM
     std::shared_ptr<ORB_SLAM3::System> pSLAM =
         std::make_shared<ORB_SLAM3::System>(
             argv[1], argv[2], ORB_SLAM3::System::RGBD);
@@ -105,12 +113,17 @@ int main(int argc, char **argv)
 
     // Create GaussianMapper
     std::filesystem::path gaussian_cfg_path(argv[3]);
+    // 创建一个指向GaussianMapper类型对象的共享指针pGausMapper
     std::shared_ptr<GaussianMapper> pGausMapper =
         std::make_shared<GaussianMapper>(
             pSLAM, gaussian_cfg_path, output_dir, 0, device_type);
+    // 创建了一个新的线程 training_thd，并将 GaussianMapper::run 函数作为线程执行的函数，同时传入了 pGausMapper.get() 作为参数。
+    // pGausMapper.get() 用于获取 pGausMapper 指针指向的对象的原始指针，因为 std::thread 构造函数需要原始指针作为参数。这样做的目的
+    // 可能是在一个单独的线程中执行 GaussianMapper::run 函数，以便进行地图生成的操作。
     std::thread training_thd(&GaussianMapper::run, pGausMapper.get());
 
     // Create Gaussian Viewer
+    // 用于高斯的可视化
     std::thread viewer_thd;
     std::shared_ptr<ImGuiViewer> pViewer;
     if (use_viewer)
@@ -120,12 +133,15 @@ int main(int argc, char **argv)
     }
 
     // Vector for tracking time statistics
+    // 储存跟踪时间
     std::vector<float> vTimesTrack;
     vTimesTrack.resize(nImages);
 
-    std::cout << std::endl << "-------" << std::endl;
+    std::cout << std::endl
+              << "-------" << std::endl;
     std::cout << "Start processing sequence ..." << std::endl;
-    std::cout << "Images in the sequence: " << nImages << std::endl << std::endl;
+    std::cout << "Images in the sequence: " << nImages << std::endl
+              << std::endl;
 
     // Main loop
     cv::Mat imRGB, imD;
@@ -134,6 +150,7 @@ int main(int argc, char **argv)
         if (pSLAM->isShutDown())
             break;
         // Read image and depthmap from file
+        // 从文件中获取RGB和深度图
         imRGB = cv::imread(std::string(argv[4]) + "/" + vstrImageFilenamesRGB[ni], cv::IMREAD_UNCHANGED);
         cv::cvtColor(imRGB, imRGB, CV_BGR2RGB);
         imD = cv::imread(std::string(argv[4]) + "/" + vstrImageFilenamesD[ni], cv::IMREAD_UNCHANGED);
@@ -141,13 +158,15 @@ int main(int argc, char **argv)
 
         if (imRGB.empty())
         {
-            std::cerr << std::endl << "Failed to load image at: "
+            std::cerr << std::endl
+                      << "Failed to load image at: "
                       << std::string(argv[4]) << "/" << vstrImageFilenamesRGB[ni] << std::endl;
             return 1;
         }
         if (imD.empty())
         {
-            std::cerr << std::endl << "Failed to load depth image at: "
+            std::cerr << std::endl
+                      << "Failed to load depth image at: "
                       << std::string(argv[4]) << "/" << vstrImageFilenamesD[ni] << std::endl;
             return 1;
         }
@@ -159,7 +178,7 @@ int main(int argc, char **argv)
             cv::resize(imRGB, imRGB, cv::Size(width, height));
             cv::resize(imD, imD, cv::Size(width, height));
         }
-
+        // 用于获取当前的时间点
         std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
         // Pass the image to the SLAM system
@@ -167,11 +186,13 @@ int main(int argc, char **argv)
 
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 
+        // 计算跟踪时间，加入到vTimesTrack中
         double ttrack = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
 
         vTimesTrack[ni] = ttrack;
 
         // Wait to load the next frame
+        // 如果跟踪的时间太快了，大于输入图像之间的时间间隔，那就等待一会，再加载下一帧
         double T = 0;
         if (ni < nImages - 1)
             T = vTimestamps[ni + 1] - tframe;
@@ -179,6 +200,7 @@ int main(int argc, char **argv)
             T = tframe - vTimestamps[ni - 1];
 
         if (ttrack < T)
+            // 将秒转换为微秒
             usleep((T - ttrack) * 1e6);
     }
 
@@ -204,6 +226,7 @@ int main(int argc, char **argv)
     return 0;
 }
 
+// 加载图像
 void LoadImages(const std::string &strAssociationFilename, std::vector<std::string> &vstrImageFilenamesRGB,
                 std::vector<std::string> &vstrImageFilenamesD, std::vector<double> &vTimestamps)
 {
