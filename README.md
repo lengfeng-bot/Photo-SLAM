@@ -196,35 +196,39 @@ dos2unix build.sh
 
 TUM test
 
+```
 ../bin/tum_rgbd ../ORB-SLAM3/Vocabulary/ORBvoc.txt ../cfg/ORB_SLAM3/RGB-D/TUM/tum_freiburg1_desk.yaml ../cfg/gaussian_mapper/RGB-D/TUM/tum_rgbd.yaml /media/deepnavi/DATASET/TUM/rgbd_dataset_freiburg1_desk ../cfg/ORB_SLAM3/RGB-D/TUM/associations/tum_freiburg1_desk.txt /home/deepnavi/abandon/Photo-SLAM/output/test_out no_viewer
-
+```
 
 replica test
+```
 cd bin/
 
 ./replica_rgbd ../ORB-SLAM3/Vocabulary/ORBvoc.txt ../cfg/ORB_SLAM3/RGB-D/Replica/office2.yaml ../cfg/gaussian_mapper/RGB-D/Replica/replica_rgbd.yaml /media/deepnavi/DATASET/Replica/office2 /home/deepnavi/abandon/Photo-SLAM/output/test_out no_viewer
+```
 
-
+```
 cd bin/
 gdb replica_rgbd
 set breakpoint pending on
 source 9.24.bp
 run ../ORB-SLAM3/Vocabulary/ORBvoc.txt ../cfg/ORB_SLAM3/RGB-D/Replica/office2.yaml ../cfg/gaussian_mapper/RGB-D/Replica/replica_rgbd.yaml /media/deepnavi/DATASET/Replica/office2 /home/deepnavi/abandon/Photo-SLAM/output/test_out no_viewer
-
+```
 
 
 
 查看显示
-
+```
 echo $DISPLAY  #可能会显示
 :0.0
 export DISPLAY=:0
 
 
 export DISPLAY=192.168.1.110:0.0
+```
 
 测试
-
+```
 xeyes
-
+```
 
