@@ -1,8 +1,7 @@
 /// @file
 /// Special Euclidean group SE(2) - rotation and translation in 2d.
 
-#ifndef SOPHUS_SE2_HPP
-#define SOPHUS_SE2_HPP
+#pragma once
 
 #include "so2.hpp"
 
@@ -74,6 +73,7 @@ class SE2Base {
   using Point = Vector2<Scalar>;
   using HomogeneousPoint = Vector3<Scalar>;
   using Line = ParametrizedLine2<Scalar>;
+  using Hyperplane = Hyperplane2<Scalar>;
   using Tangent = Vector<Scalar, DoF>;
   using Adjoint = Matrix<Scalar, DoF, DoF>;
 
@@ -137,6 +137,18 @@ class SE2Base {
     J(3, 0) = c[1];
     J(3, 1) = c[0];
     J(3, 2) = o;
+    return J;
+  }
+
+  /// Returns derivative of log(this^{-1} * x) by x at x=this.
+  ///
+  SOPHUS_FUNC Matrix<Scalar, DoF, num_parameters> Dx_log_this_inv_by_x_at_this()
+      const {
+    Matrix<Scalar, DoF, num_parameters> J;
+    J.template block<2, 2>(0, 0).setZero();
+    J.template block<2, 2>(0, 2) = so2().inverse().matrix();
+    J.template block<1, 2>(2, 0) = so2().Dx_log_this_inv_by_x_at_this();
+    J.template block<1, 2>(2, 2).setZero();
     return J;
   }
 
@@ -272,6 +284,23 @@ class SE2Base {
     return Line((*this) * l.origin(), so2() * l.direction());
   }
 
+  /// Group action on hyper-planes.
+  ///
+  /// This function rotates a hyper-plane ``n.x + d = 0`` by the SE2
+  /// element:
+  ///
+  /// Normal vector ``n`` is rotated
+  /// Offset ``d`` is adjusted for translation
+  ///
+  /// Note that in 2d-case hyper-planes are just another parametrization of
+  /// lines
+  ///
+  SOPHUS_FUNC Hyperplane operator*(Hyperplane const& p) const {
+    Hyperplane const rotated = so2() * p;
+    return Hyperplane(rotated.normal(),
+                      rotated.offset() - translation().dot(rotated.normal()));
+  }
+
   /// In-place group multiplication. This method is only valid if the return
   /// type of the multiplication is compatible with this SO2's Scalar type.
   ///
@@ -313,8 +342,8 @@ class SE2Base {
   /// Precondition: ``R`` must be orthogonal and ``det(R)=1``.
   ///
   SOPHUS_FUNC void setRotationMatrix(Matrix<Scalar, 2, 2> const& R) {
-    SOPHUS_ENSURE(isOrthogonal(R), "R is not orthogonal:\n %", R);
-    SOPHUS_ENSURE(R.determinant() > Scalar(0), "det(R) is not positive: %",
+    SOPHUS_ENSURE(isOrthogonal(R), "R is not orthogonal:\n {}", R);
+    SOPHUS_ENSURE(R.determinant() > Scalar(0), "det(R) is not positive: {}",
                   R.determinant());
     typename SO2Type::ComplexTemporaryType const complex(
         Scalar(0.5) * (R(0, 0) + R(1, 1)), Scalar(0.5) * (R(1, 0) - R(0, 1)));
@@ -374,6 +403,11 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
   using TranslationMember = Vector2<Scalar, Options>;
 
   using Base::operator=;
+
+  /// Define copy-assignment operator explicitly. The definition of
+  /// implicit copy assignment operator is deprecated in presence of a
+  /// user-declared copy constructor (-Wdeprecated-copy in clang >= 13).
+  SOPHUS_FUNC SE2& operator=(SE2 const& other) = default;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -488,8 +522,10 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
       Scalar const i(1);
 
       // clang-format off
-      J << o, o, o, o, o, i, i, o, -Scalar(0.5) * upsilon[1], o, i,
-          Scalar(0.5) * upsilon[0];
+      J << o, o, o,
+           o, o, i,
+           i, o, -Scalar(0.5) * upsilon[1],
+           o, i,  Scalar(0.5) * upsilon[0];
       // clang-format on
       return J;
     }
@@ -532,7 +568,10 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
     Scalar const i(1);
 
     // clang-format off
-    J << o, o, o, o, o, i, i, o, o, o, i, o;
+    J << o, o, o,
+         o, o, i,
+         i, o, o,
+         o, i, o;
     // clang-format on
     return J;
   }
@@ -711,7 +750,7 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
   SOPHUS_FUNC static Tangent vee(Transformation const& Omega) {
     SOPHUS_ENSURE(
         Omega.row(2).template lpNorm<1>() < Constants<Scalar>::epsilon(),
-        "Omega: \n%", Omega);
+        "Omega: \n{}", Omega);
     Tangent upsilon_omega;
     upsilon_omega.template head<2>() = Omega.col(2).template head<2>();
     upsilon_omega[2] = SO2<Scalar>::vee(Omega.template topLeftCorner<2, 2>());
@@ -760,7 +799,7 @@ class Map<Sophus::SE2<Scalar_>, Options>
   using Base::operator*;
 
   SOPHUS_FUNC
-  Map(Scalar* coeffs)
+  explicit Map(Scalar* coeffs)
       : so2_(coeffs),
         translation_(coeffs + Sophus::SO2<Scalar>::num_parameters) {}
 
@@ -809,7 +848,7 @@ class Map<Sophus::SE2<Scalar_> const, Options>
   using Base::operator*=;
   using Base::operator*;
 
-  SOPHUS_FUNC Map(Scalar const* coeffs)
+  SOPHUS_FUNC explicit Map(Scalar const* coeffs)
       : so2_(coeffs),
         translation_(coeffs + Sophus::SO2<Scalar>::num_parameters) {}
 
@@ -831,5 +870,3 @@ class Map<Sophus::SE2<Scalar_> const, Options>
   Map<Sophus::Vector2<Scalar> const, Options> const translation_;
 };
 }  // namespace Eigen
-
-#endif

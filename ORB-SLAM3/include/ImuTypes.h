@@ -28,7 +28,7 @@
 #include <Eigen/Dense>
 #include <sophus/se3.hpp>
 #include <mutex>
-
+#include <iostream>
 #include "SerializationUtils.h"
 
 #include <boost/serialization/serialization.hpp>

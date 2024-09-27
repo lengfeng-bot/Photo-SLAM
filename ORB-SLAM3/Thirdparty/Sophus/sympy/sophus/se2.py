@@ -37,6 +37,10 @@ class Se2:
         upsilon = V_inv * self.t
         return sophus.Vector3(upsilon[0], upsilon[1], theta)
 
+    def calc_Dx_log_this(self):
+        return sympy.Matrix(3, 4, lambda r, c: sympy.diff(self.log()[r], self[c]))
+
+
     def __repr__(self):
         return "Se2: [" + repr(self.so2) + " " + repr(self.t)
 
@@ -218,6 +222,24 @@ class TestSe2(unittest.TestCase):
                 self.assertEqual(line, file_lines[i])
             file.close()
         stream.close
+
+        stream = sophus.cse_codegen(self.a.calc_Dx_log_this())
+        filename = "cpp_gencode/Se2_Dx_log_this.cpp"
+
+        # set to true to generate codegen files
+        if False:
+            file = open(filename, "w")
+            for line in stream:
+                file.write(line)
+            file.close()
+        else:
+            file = open(filename, "r")
+            file_lines = file.readlines()
+            for i, line in enumerate(stream):
+                self.assertEqual(line, file_lines[i])
+            file.close()
+        stream.close
+
 
 
 if __name__ == '__main__':

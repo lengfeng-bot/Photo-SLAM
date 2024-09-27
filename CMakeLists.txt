@@ -2,9 +2,10 @@ cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(photo-slam LANGUAGES CXX CUDA)
 
 if(NOT CMAKE_BUILD_TYPE)
-    # set(CMAKE_BUILD_TYPE Debug)
-    set(CMAKE_BUILD_TYPE Release)
+    set(CMAKE_BUILD_TYPE Debug)
+    #set(CMAKE_BUILD_TYPE Release)
 endif()
+#set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -14,9 +15,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 
 set(CAFFE2_USE_CUDNN on)
 
+
+
 # Uncomment the following line if you want to solve CMake Warning "Failed to compute shorthash for libnvrtc.so"
 # set(PYTHON_EXECUTABLE "/usr/bin/python3")
-
+set(Torch_DIR "/home/deepnavi/abandon/Download/libtorch/share/cmake/Torch")
 find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS} -pthread")
 
@@ -32,11 +35,12 @@ find_package(OpenGL REQUIRED)
 find_package(glm REQUIRED)
 find_package(glfw3 REQUIRED)
 
-find_package(realsense2)
+# find_package(realsense2)
 
 set(ORB_SLAM3_SOURCE_DIR "${PROJECT_SOURCE_DIR}/ORB-SLAM3")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+# set(Torch_DIR /home/deepnavi/abandon/Download/libtorch/share/cmake/Torch)
 
 include_directories(
     ${PROJECT_SOURCE_DIR}
@@ -45,7 +49,8 @@ include_directories(
     ${ORB_SLAM3_SOURCE_DIR}/include/CameraModels
     ${ORB_SLAM3_SOURCE_DIR}/Thirdparty/Sophus
     ${EIGEN3_INCLUDE_DIR}
-    ${OPENGL_INCLUDE_DIR})
+    ${OPENGL_INCLUDE_DIR}
+    "usr/include/fmt")
 
 ##################################################################################
 ##  Build the gaussian splatting component libraries to ${PROJECT_SOURCE_DIR}/lib
@@ -170,7 +175,8 @@ target_link_libraries(gaussian_viewer
     "${TORCH_LIBRARIES}"
     glm::glm
     glfw
-    OpenGL::GL)
+    OpenGL::GL
+    fmt)
 
 ##################################################################################
 ##  Build the test examples to ${PROJECT_SOURCE_DIR}/bin
@@ -191,12 +197,12 @@ target_link_libraries(view_result
 ##  Build the mapping examples to ${PROJECT_SOURCE_DIR}/bin
 ##################################################################################
 
-# Replica Monocular
-add_executable(replica_mono examples/replica_mono.cpp)
-target_link_libraries(replica_mono
-    gaussian_viewer    
-    gaussian_mapper
-    ${ORB_SLAM3_SOURCE_DIR}/lib/libORB_SLAM3.so)
+# # Replica Monocular
+# add_executable(replica_mono examples/replica_mono.cpp)
+# target_link_libraries(replica_mono
+#     gaussian_viewer    
+#     gaussian_mapper
+#     ${ORB_SLAM3_SOURCE_DIR}/lib/libORB_SLAM3.so)
 
 # Replica Monocular
 add_executable(replica_rgbd examples/replica_rgbd.cpp)
@@ -205,39 +211,39 @@ target_link_libraries(replica_rgbd
     gaussian_mapper
     ${ORB_SLAM3_SOURCE_DIR}/lib/libORB_SLAM3.so)
 
-# TUM Monocular
-add_executable(tum_mono examples/tum_mono.cpp)
-target_link_libraries(tum_mono
-    gaussian_viewer    
-    gaussian_mapper
-    ${ORB_SLAM3_SOURCE_DIR}/lib/libORB_SLAM3.so)
+# # TUM Monocular
+# add_executable(tum_mono examples/tum_mono.cpp)
+# target_link_libraries(tum_mono
+#     gaussian_viewer    
+#     gaussian_mapper
+#     ${ORB_SLAM3_SOURCE_DIR}/lib/libORB_SLAM3.so)
 
-# TUM RGBD
-add_executable(tum_rgbd examples/tum_rgbd.cpp)
-target_link_libraries(tum_rgbd
-    gaussian_viewer    
-    gaussian_mapper
-    ${ORB_SLAM3_SOURCE_DIR}/lib/libORB_SLAM3.so)
+# # TUM RGBD
+# add_executable(tum_rgbd examples/tum_rgbd.cpp)
+# target_link_libraries(tum_rgbd
+#     gaussian_viewer    
+#     gaussian_mapper
+#     ${ORB_SLAM3_SOURCE_DIR}/lib/libORB_SLAM3.so)
 
-# EuRoC Stereo
-add_executable(euroc_stereo examples/euroc_stereo.cpp)
-target_link_libraries(euroc_stereo
-    gaussian_viewer    
-    gaussian_mapper
-    ${ORB_SLAM3_SOURCE_DIR}/lib/libORB_SLAM3.so)
+# # EuRoC Stereo
+# add_executable(euroc_stereo examples/euroc_stereo.cpp)
+# target_link_libraries(euroc_stereo
+#     gaussian_viewer    
+#     gaussian_mapper
+#     ${ORB_SLAM3_SOURCE_DIR}/lib/libORB_SLAM3.so)
 
 ##################################################################################
 ##  Build the mapping examples to ${PROJECT_SOURCE_DIR}/bin
 ##################################################################################
 
 # Intel Realsense
-if(realsense2_FOUND)
-    add_executable(realsense_rgbd examples/realsense_rgbd.cpp)
-    target_include_directories(realsense_rgbd PUBLIC
-        ${realsense_INCLUDE_DIR})
-    target_link_libraries(realsense_rgbd
-        gaussian_viewer    
-        gaussian_mapper
-        ${ORB_SLAM3_SOURCE_DIR}/lib/libORB_SLAM3.so
-        ${realsense2_LIBRARY})
-endif()
+# if(realsense2_FOUND)
+#     add_executable(realsense_rgbd examples/realsense_rgbd.cpp)
+#     target_include_directories(realsense_rgbd PUBLIC
+#         ${realsense_INCLUDE_DIR})
+#     target_link_libraries(realsense_rgbd
+#         gaussian_viewer    
+#         gaussian_mapper
+#         ${ORB_SLAM3_SOURCE_DIR}/lib/libORB_SLAM3.so
+#         ${realsense2_LIBRARY})
+# endif()

@@ -76,12 +76,14 @@ int main(int argc, char **argv)
     int nImages = vstrImageFilenamesRGB.size();
     if (vstrImageFilenamesRGB.empty())
     {
-        std::cerr << std::endl << "No images found in provided path." << std::endl;
+        std::cerr << std::endl
+                  << "No images found in provided path." << std::endl;
         return 1;
     }
     else if (vstrImageFilenamesD.size() != vstrImageFilenamesRGB.size())
     {
-        std::cerr << std::endl << "Different number of images for rgb and depth." << std::endl;
+        std::cerr << std::endl
+                  << "Different number of images for rgb and depth." << std::endl;
         return 1;
     }
 
@@ -124,9 +126,11 @@ int main(int argc, char **argv)
     std::vector<float> vTimesTrack;
     vTimesTrack.resize(nImages);
 
-    std::cout << std::endl << "-------" << std::endl;
+    std::cout << std::endl
+              << "-------" << std::endl;
     std::cout << "Start processing sequence ..." << std::endl;
-    std::cout << "Images in the sequence: " << nImages << std::endl << std::endl;
+    std::cout << "Images in the sequence: " << nImages << std::endl
+              << std::endl;
 
     // Main loop
     cv::Mat imRGB, imD;
@@ -142,13 +146,15 @@ int main(int argc, char **argv)
 
         if (imRGB.empty())
         {
-            std::cerr << std::endl << "Failed to load image at: "
+            std::cerr << std::endl
+                      << "Failed to load image at: "
                       << vstrImageFilenamesRGB[ni] << std::endl;
             return 1;
         }
         if (imD.empty())
         {
-            std::cerr << std::endl << "Failed to load image at: "
+            std::cerr << std::endl
+                      << "Failed to load image at: "
                       << vstrImageFilenamesD[ni] << std::endl;
             return 1;
         }
@@ -197,7 +203,7 @@ int main(int argc, char **argv)
 void LoadImages(const std::filesystem::path &pathImageDir, std::vector<std::string> &vstrImageFilenamesRGB,
                 std::vector<std::string> &vstrImageFilenamesD)
 {
-    for (const auto& imagePath : std::filesystem::directory_iterator(pathImageDir))
+    for (const auto &imagePath : std::filesystem::directory_iterator(pathImageDir))
     {
         std::string name = imagePath.path().filename().string();
         if (name.rfind("frame", 0) == 0)

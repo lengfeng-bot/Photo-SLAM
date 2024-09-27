@@ -19,7 +19,7 @@
 
 #ifndef GEOMETRIC_TOOLS_H
 #define GEOMETRIC_TOOLS_H
-
+#include <iostream>
 #include <opencv2/core/core.hpp>
 #include <sophus/se3.hpp>
 #include <Eigen/Core>
