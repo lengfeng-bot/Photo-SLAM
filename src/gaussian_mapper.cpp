@@ -778,6 +778,16 @@ void GaussianMapper::trainForOneIteration()
     auto viewspace_point_tensor = std::get<1>(render_pkg);
     auto visibility_filter = std::get<2>(render_pkg);
     auto radii = std::get<3>(render_pkg);
+    auto n_touched = std::get<4>(render_pkg);
+
+    // cout<<"rendered_image size:  "<<rendered_image.sizes()<<endl;
+    // cout<<"viewspace_point_tensor size:  "<<viewspace_point_tensor.sizes()<<endl;
+    // cout<<"radii size:  "<<radii.sizes()<<endl;
+    cout<<"n_touched size:  "<<n_touched.sizes()<<endl;
+    //cout << "n_touched first: " << n_touched.index({0}) << endl;
+    cout<<"max_radii2D_ size:  "<<gaussians_->max_radii2D_.sizes()<<endl;
+
+    
 
     // Get rid of black edges caused by undistortion
     torch::Tensor masked_image = rendered_image * mask;
@@ -786,7 +796,7 @@ void GaussianMapper::trainForOneIteration()
     auto Ll1 = loss_utils::l1_loss(masked_image, gt_image);
     float lambda_dssim = lambdaDssim();
     auto loss = (1.0 - lambda_dssim) * Ll1 + lambda_dssim * (1.0 - loss_utils::ssim(masked_image, gt_image, device_type_));
-    // 反向传播，这里直接调用cuda手写的反向传播
+    // 反向传播
     loss.backward();
 
     torch::cuda::synchronize();
@@ -1715,7 +1725,7 @@ cv::Mat GaussianMapper::renderFromPose(
         throw std::runtime_error("[GaussianMapper::renderFromPose]KeyFrame Camera not found!");
     }
 
-    std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor> render_pkg;
+    std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor> render_pkg;
     {
         std::unique_lock<std::mutex> lock_render(mutex_render_);
         // Render

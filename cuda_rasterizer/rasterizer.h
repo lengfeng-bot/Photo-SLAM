@@ -49,6 +49,7 @@ namespace CudaRasterizer
 			const float tan_fovx, float tan_fovy,
 			const bool prefiltered,
 			float* out_color,
+			int * n_touched = nullptr,
 			int* radii = nullptr);
 
 		static void backward(

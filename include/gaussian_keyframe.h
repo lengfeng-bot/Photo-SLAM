@@ -21,6 +21,7 @@
 #include <memory>
 
 #include <torch/torch.h>
+
 #include <opencv2/opencv.hpp>
 #include <Eigen/Geometry>
 
@@ -39,7 +40,8 @@ public:
     GaussianKeyframe() {}
 
     GaussianKeyframe(std::size_t fid, int creation_iter = 0)
-        : fid_(fid), creation_iter_(creation_iter) {}
+        : fid_(fid), creation_iter_(creation_iter) {
+        }
 
     void setPose(
         const double qw,
@@ -131,6 +133,7 @@ public:
     std::vector<Point2D> points2D_;
     std::vector<float> kps_pixel_;
     std::vector<float> kps_point_local_;
+
 
     bool done_inactive_geo_densify_ = false;
 };

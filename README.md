@@ -194,11 +194,15 @@ dos2unix build.sh
 
 4. 调试代码
 
+dos2unix build.sh
+
 TUM test
 
 ```
 ../bin/tum_rgbd ../ORB-SLAM3/Vocabulary/ORBvoc.txt ../cfg/ORB_SLAM3/RGB-D/TUM/tum_freiburg1_desk.yaml ../cfg/gaussian_mapper/RGB-D/TUM/tum_rgbd.yaml /media/deepnavi/DATASET/TUM/rgbd_dataset_freiburg1_desk ../cfg/ORB_SLAM3/RGB-D/TUM/associations/tum_freiburg1_desk.txt /home/deepnavi/abandon/Photo-SLAM/output/test_out no_viewer
 ```
+
+
 
 replica test
 ```
@@ -208,13 +212,21 @@ cd bin/
 ```
 
 ```
+bin/tum_rgbd ORB-SLAM3/Vocabulary/ORBvoc.txt cfg/ORB_SLAM3/RGB-D/Replica/office2.yaml cfg/gaussian_mapper/RGB-D/Replica/replica_rgbd.yaml /media/deepnavi/DATASET/Replica/office2 /home/deepnavi/abandon/Photo-SLAM/output/test_out no_viewer
+```
+
+
+
+```
 cd bin/
 gdb replica_rgbd
 set breakpoint pending on
 source 9.24.bp
 run ../ORB-SLAM3/Vocabulary/ORBvoc.txt ../cfg/ORB_SLAM3/RGB-D/Replica/office2.yaml ../cfg/gaussian_mapper/RGB-D/Replica/replica_rgbd.yaml /media/deepnavi/DATASET/Replica/office2 /home/deepnavi/abandon/Photo-SLAM/output/test_out no_viewer
 ```
+调试脚本：
 
+sh start_gdb.sh
 
 
 查看显示
@@ -231,4 +243,13 @@ export DISPLAY=192.168.1.110:0.0
 ```
 xeyes
 ```
+
+可视化三维结果，可以采用SIBR-viewer ,运行命令如下：
+```
+cd D:\web download\viewers\bin
+SIBR_gaussianViewer_app.exe -m C:\Users\killer\Desktop\ply
+```
+
+
+
 
